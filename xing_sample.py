@@ -7,7 +7,7 @@
 #  - 주문조회 : T0425
 #
 # 보다 자세한 내용을 아래 tistory 참고
-# https://money-expert.tistory.com/
+# https://money-expert.tistory.com/14
 #
 
 import win32com.client
