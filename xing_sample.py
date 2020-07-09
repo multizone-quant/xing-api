@@ -10,7 +10,7 @@
 #
 # 보다 자세한 내용을 아래 tistory 참고
 # https://money-expert.tistory.com/14
-#
+# https://money-expert.tistory.com/17
 
 import win32com.client
 import pythoncom
