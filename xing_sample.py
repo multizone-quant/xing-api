@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 
-# date : 2020/06/25
+# date : 2020/07/08
 # xing api sample
 #  - login
 #  - 잔고조회 : T0424
 #  - 주문조회 : T0425
+#  - Q검색리스트 : T1826
+#  - Q검색 : T1825
 #
 # 보다 자세한 내용을 아래 tistory 참고
 # https://money-expert.tistory.com/14
@@ -36,7 +38,7 @@ passwd = "로그인 암호"
 cert_passwd = "공인인증서 암호"
 account_number = "주식 계좌번호" 
 account_pwd = "주식계좌 암호"   
-if 0 : #모의투자
+if 1 : #모의투자
     server_add = "demo.ebestsec.co.kr"
     passwd = "모의투자 사이트 로그인암호"
     account_number = '모의주식 계좌번호'
@@ -129,11 +131,41 @@ class Form(QtWidgets.QDialog):
 
     # t1825 Q 검색 리스트 받기
     def Q_Query_1825(self) :
-        self.show_message('not yet')
+        if self.query_list == [] :
+            self.show_message('press 1826 first')
+            return
+
+        for lst in self.query_list :
+            time.sleep(1)
+            pr = "\n=== " + lst[1] +  " ==="
+            self.show_message(pr)
+            res = get_q_query(lst[0])
+            if 'error' in res[0] :
+                self.show_message (res[0]['error']['message'])
+            else :
+                if len(res) > 1 :
+                    pr = "total : " + str(res[0][0]['total'])                    
+                    self.show_message (pr)
+                    cnt = 0
+                    for itm in res[1] :
+                        pr = itm['code'] + ' ' + itm['name'] +' ' + str(itm['price']) + ' ' + str(itm['gubun'])
+                        self.show_message(pr)
+                        if cnt > 10 :
+                            break
+                        cnt+=1
+                else :
+                    self.show_message ("total : 0")
+
     # t18256 Q 검색 결과 받기
     def Q_List_1826(self) :
-        self.show_message('not yet')
+        rest = get_q_query_list('0')
+        if 'error' in rest[0] :
+            self.show_message(rest[0]['error']['message'])
+        self.query_list = rest[0] 
 
+        for query in self.query_list :
+            pr = query[0] + ' ' + query[1]
+            self.show_message(pr)
 
 class XASessionEventHandler:
     login_state = 0
@@ -321,10 +353,92 @@ def order_status_tr(kind='2', code='all', cmd_cont='') :
     res.append([{'cont':last_order_num, 'total':nCount}])
     return res
 
+# q_code : 검색하고자하는 q-query 번호
+# gubun : 구분 (0(전체), 1(코스피), 2(코스닥))
+def get_q_query(q_code, gubun='0') :
+    tr_code = 't1825'
+    INBLOCK = "%sInBlock" % tr_code
+    INBLOCK1 = "%sInBlock1" % tr_code
+    OUTBLOCK = "%sOutBlock" % tr_code
+    OUTBLOCK1 = "%sOutBlock1" % tr_code
+    OUTBLOCK2 = "%sOutBlock2" % tr_code
+    OUTBLOCK3 = "%sOutBlock3" % tr_code
+
+    query = win32com.client.DispatchWithEvents("XA_DataSet.XAQuery", XAQueryEventHandler)
+    query.ResFileName = XING_PATH+"\\Res\\"+tr_code+".res"
+
+    query.SetFieldData(INBLOCK, "search_cd", 0, str(q_code))#q code
+    query.SetFieldData(INBLOCK, "gubun", 0, str(gubun)) #구분
+    query.Request(0)
+
+    ret = wait_for_event(tr_code)
+    if ret == 0 :
+        return [{'error':{'message':tr_code+' msg error'}}]
+
+    result1 = []
+    nCount = query.GetBlockCount(OUTBLOCK)
+    res_cnt = 0
+    for i in range(nCount):
+        res_cnt = int(query.GetFieldData(OUTBLOCK, "JongCnt", i).strip()) #검색종목수
+
+        lst = {'total':res_cnt}
+        result1.append(lst)
+
+    result2 = []
+    for i in range(res_cnt):
+        sh_code = query.GetFieldData(OUTBLOCK1, "shcode", i).strip() #종목코드
+        sh_name = query.GetFieldData(OUTBLOCK1, "hname", i).strip() #종목명
+        cur_gubun = query.GetFieldData(OUTBLOCK1, "sign", i).strip() #전일대비구분
+        consec_bong = int(query.GetFieldData(OUTBLOCK1, "signcnt", i).strip()) #연속봉수
+        cur_price = int(query.GetFieldData(OUTBLOCK1, "close", i).strip()) #현재가
+        change = int(query.GetFieldData(OUTBLOCK1, "change", i).strip()) # 전일대비
+        diff = query.GetFieldData(OUTBLOCK1, "diff", i).strip() # 등락율
+        cur_vol = int(query.GetFieldData(OUTBLOCK1, "volume", i).strip()) #거래량
+        vol_rate = query.GetFieldData(OUTBLOCK1, "volumerate", i).strip() # 거래량전일대비율
+        lst = {'code':sh_code, 'name':sh_name, 'gubun':cur_gubun, 'consec_bong':consec_bong, 'price':cur_price, 'change':change, 'diff':diff, 'qty':cur_vol, 'qty_rate':vol_rate}
+        result2.append(lst)
+
+    res = []
+    res.append(result1)
+    res.append(result2)
+    return res
+
+# q_code : 검색하고자하는 q-query 번호
+# gubun : 구분 (0(전체), 1(코스피), 2(코스닥))
+def get_q_query_list(gubun) :
+    tr_code = 't1826'
+    INBLOCK = "%sInBlock" % tr_code
+    INBLOCK1 = "%sInBlock1" % tr_code
+    OUTBLOCK = "%sOutBlock" % tr_code
+    OUTBLOCK1 = "%sOutBlock1" % tr_code
+    OUTBLOCK2 = "%sOutBlock2" % tr_code
+    OUTBLOCK3 = "%sOutBlock3" % tr_code
+
+    query = win32com.client.DispatchWithEvents("XA_DataSet.XAQuery", XAQueryEventHandler)
+    query.ResFileName = XING_PATH+"Res\\"+tr_code+".res"
+
+    query.SetFieldData(INBLOCK, "search_gb", 0, str(gubun)) #구분
+    query.Request(0)
+
+    ret = wait_for_event(tr_code)
+    if ret == 0 :
+        return [{'error':{'message':tr_code+' msg error'}}]
+
+    result1 = []
+    nCount = query.GetBlockCount(OUTBLOCK)
+    for i in range(nCount):
+        res_code = query.GetFieldData(OUTBLOCK, "search_cd", i).strip() #검색코드
+        res_name = query.GetFieldData(OUTBLOCK, "search_nm", i).strip() #검색명
+
+        lst = [res_code, res_name]
+        result1.append(lst)
+    return [result1]
+
 if __name__ == "__main__":
     
     print('\nebest testing')
-
+    server_add = "hts.ebestsec.co.kr"
+    
     ret = login(server_add, id, passwd, cert_passwd, account_number, account_pwd)
     if ret != -1 :
         time.sleep(1)
