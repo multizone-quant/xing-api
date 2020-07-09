@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Form</class>
+ <widget class="QWidget" name="Form">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>825</width>
+    <height>739</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <widget class="QPushButton" name="pushButton_q_query_1825">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>200</y>
+     <width>191</width>
+     <height>34</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Q 검색  T1825</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButton_q_query_1826">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>150</y>
+     <width>191</width>
+     <height>34</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Q 검색리스트 T1826</string>
+   </property>
+  </widget>
+  <widget class="QListWidget" name="listWidget_msg">
+   <property name="geometry">
+    <rect>
+     <x>240</x>
+     <y>40</y>
+     <width>571</width>
+     <height>681</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButton_q_query_1827">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>40</y>
+     <width>191</width>
+     <height>34</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>잔고 T0424</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButton_q_query_1828">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>90</y>
+     <width>191</width>
+     <height>34</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>주문체결상태 T0425</string>
+   </property>
+  </widget>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>pushButton_q_query_1825</sender>
+   <signal>pressed()</signal>
+   <receiver>Form</receiver>
+   <slot>Q_Query_1825()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>170</x>
+     <y>220</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>200</x>
+     <y>165</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButton_q_query_1826</sender>
+   <signal>pressed()</signal>
+   <receiver>Form</receiver>
+   <slot>Q_List_1826()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>109</x>
+     <y>169</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>102</x>
+     <y>19</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButton_q_query_1827</sender>
+   <signal>pressed()</signal>
+   <receiver>Form</receiver>
+   <slot>Balance_0424()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>147</x>
+     <y>53</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>184</x>
+     <y>24</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButton_q_query_1828</sender>
+   <signal>pressed()</signal>
+   <receiver>Form</receiver>
+   <slot>OrderResults_0425()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>197</x>
+     <y>107</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>215</x>
+     <y>122</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>Q_Query_1825()</slot>
+  <slot>Q_List_1826()</slot>
+  <slot>Balance_0424()</slot>
+  <slot>OrderResults_0425()</slot>
+ </slots>
+</ui>
