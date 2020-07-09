@@ -11,11 +11,13 @@
 # 보다 자세한 내용을 아래 tistory 참고
 # https://money-expert.tistory.com/14
 # https://money-expert.tistory.com/17
+#
 
 import win32com.client
 import pythoncom
 import sys
 import time
+import json
 from PyQt5 import QtWidgets
 from PyQt5 import QtGui
 from PyQt5 import QtCore
@@ -38,7 +40,7 @@ passwd = "로그인 암호"
 cert_passwd = "공인인증서 암호"
 account_number = "주식 계좌번호" 
 account_pwd = "주식계좌 암호"   
-if 1 : #모의투자
+if 0 : #모의투자
     server_add = "demo.ebestsec.co.kr"
     passwd = "모의투자 사이트 로그인암호"
     account_number = '모의주식 계좌번호'
@@ -46,6 +48,55 @@ if 1 : #모의투자
 # ======================================================
 # 수정하여야 하는 부분 끝
 # ======================================================
+
+
+def read_csv(fname) :
+    data = []
+    with open(fname, 'r', encoding='UTF8') as FILE :
+        csv_reader = csv.reader(FILE, delimiter=',', quotechar='"')
+        for row in csv_reader :
+            data.append(row)
+    return data
+
+
+#def read_data_from_file(fname) :
+def save_to_file_csv(file_name, data) :
+    with open(file_name,'w',encoding="cp949") as make_file: 
+        # title 저장
+        vals = data[0].keys()
+        ss = ''
+        for val in vals:
+            val = val.replace(',','')
+            ss += (val + ',')
+        ss += '\n'
+        make_file.write(ss)
+
+        for dt in data:
+            vals = dt.values()
+            ss = ''
+            for val in vals:
+                sval = str(val) 
+                sval = sval.replace(',','')
+                ss += (sval + ',')
+            ss += '\n'
+            make_file.write(ss)
+    make_file.close()
+
+def save_to_file_json(file_name, data) :
+    with open(file_name,'w',encoding="cp949") as make_file: 
+       json.dump(data, make_file, ensure_ascii=False, indent="\t") 
+    make_file.close()
+
+def load_json_from_file(file_name, err_msg=1) :
+    try :
+        with open(file_name,'r',encoding="cp949") as make_file: 
+           data=json.load(make_file) 
+        make_file.close()
+    except  Exception as e : # 또는 except : 
+        data = {}
+        if err_msg :
+            print(e, file_name)
+    return data
 
 TODAY = time.strftime("%Y%m%d")
 TODAY_TIME = time.strftime("%H%M%S")
@@ -402,7 +453,6 @@ def get_q_query(q_code, gubun='0') :
     res.append(result1)
     res.append(result2)
     return res
-
 # q_code : 검색하고자하는 q-query 번호
 # gubun : 구분 (0(전체), 1(코스피), 2(코스닥))
 def get_q_query_list(gubun) :
@@ -434,6 +484,130 @@ def get_q_query_list(gubun) :
         result1.append(lst)
     return [result1]
 
+# gubun : 주기구분
+#        0:30초 1: 1분 2: 2분 ..... n: n분
+# sdate : 시작 date
+# edate : 끝 date
+def chart_min(code, ncnt, qrycnt, sdate, edate, cts_date='', cts_time=' ') :
+    '''
+    차트 일/주/월봉
+    '''
+    time.sleep(0.5)
+    tr_code = 't8412'
+
+    MYNAME = tr_code
+    INBLOCK = "%sInBlock" % MYNAME
+    INBLOCK1 = "%sInBlock1" % MYNAME
+    OUTBLOCK = "%sOutBlock" % MYNAME
+    OUTBLOCK1 = "%sOutBlock1" % MYNAME
+    OUTBLOCK2 = "%sOutBlock2" % MYNAME
+    query = win32com.client.DispatchWithEvents("XA_DataSet.XAQuery", XAQueryEventHandler)
+    query.ResFileName = "C:\\eBEST\\xingAPI\\Res\\"+tr_code+".res"
+
+    query.SetFieldData(INBLOCK, "shcode", 0, code) # 종목번호 
+    query.SetFieldData(INBLOCK, "ncnt", 0, ncnt) # 주기(분)구분(0:30초 1: 1분 2: 2분 ..... n: n분)
+    query.SetFieldData(INBLOCK, "qrycnt", 0, qrycnt) #봉 수)
+    query.SetFieldData(INBLOCK, "sdate", 0, sdate) #시작일자)
+    query.SetFieldData(INBLOCK, "edate", 0, sdate) #끝일자)
+    query.SetFieldData(INBLOCK, "cts_date", 0, cts_date) #연속일자)
+    query.SetFieldData(INBLOCK, "cts_time", 0, cts_time) #연속시간)
+    query.SetFieldData(INBLOCK, "comp_yn", 0, 'N') #압축여부 : Y:압축, N:비압축
+    query.Request(0)
+
+    ret = wait_for_event(tr_code)
+    if ret == 0 :
+        return [{'error':{'message':'Not respond msg'}}]
+
+    result1 = []
+    nCount = query.GetBlockCount(OUTBLOCK)
+    for i in range(nCount):
+        shcode = query.GetFieldData(OUTBLOCK, "shcode", i).strip() #코드
+        jisiga = int(query.GetFieldData(OUTBLOCK, "jisiga", i).strip()) #전일시가
+        jihigh = int(query.GetFieldData(OUTBLOCK, "jihigh", i).strip()) #전일고가
+        jilow = int(query.GetFieldData(OUTBLOCK, "jilow", i).strip()) #전일저가
+        jiclose = int(query.GetFieldData(OUTBLOCK, "jiclose", i).strip()) #전일종가
+        jivolume = int(query.GetFieldData(OUTBLOCK, "jivolume", i).strip()) #전일거래량
+        disiga = int(query.GetFieldData(OUTBLOCK, "disiga", i).strip()) #당일시가
+        dihigh = int(query.GetFieldData(OUTBLOCK, "dihigh", i).strip()) #당일고가
+        dilow = int(query.GetFieldData(OUTBLOCK, "dilow", i).strip()) #당일저가
+        diclose = int(query.GetFieldData(OUTBLOCK, "diclose", i).strip()) #당일종가
+        cts_date = query.GetFieldData(OUTBLOCK, "cts_date", i).strip() #연속일자
+        cts_time = query.GetFieldData(OUTBLOCK, "cts_time", i).strip() #연속일자
+        rec_count = int(query.GetFieldData(OUTBLOCK, "rec_count", i).strip()) #rec 수
+
+        # ji 값들은 오늘 기준으로 어제 값이다. 따라서 더 과거 데이터를 검색하는 겨우에는 쓸모없는 값이다.
+        candle = {'code':shcode, 'jisiga':jisiga, 'jihigh':jihigh, 'jilow':jilow, 'jiclose':jiclose, 'jivolume':jivolume, 
+                    'disiga':disiga, 'dihigh':dihigh, 'dilow':dilow, 'diclose':diclose, 
+                    'cts_date': cts_date, 'cts_time': cts_time, 'rec_cnt':rec_count}
+
+        result1.append(candle)
+
+    result2 = []
+    nCount = query.GetBlockCount(OUTBLOCK1)
+    for i in range(nCount):
+        date = query.GetFieldData(OUTBLOCK1, "date", i).strip() #일자
+        tm = query.GetFieldData(OUTBLOCK1, "time", i).strip() #시간
+        opn = int(query.GetFieldData(OUTBLOCK1, "open", i).strip()) #시가
+        high = int(query.GetFieldData(OUTBLOCK1, "high", i).strip()) #고가
+        low = int(query.GetFieldData(OUTBLOCK1, "low", i).strip()) #저가
+        close = int(query.GetFieldData(OUTBLOCK1, "close", i).strip()) #종가
+        jdiff_vol = int(query.GetFieldData(OUTBLOCK1, "jdiff_vol", i).strip()) #거래량
+        value = int(query.GetFieldData(OUTBLOCK1, "value", i).strip()) #거래대금
+
+        sign = query.GetFieldData(OUTBLOCK1, "sign", i).strip() #종가등락(1:상한, 2:상승, 3: 보합
+
+        jongchk = int(query.GetFieldData(OUTBLOCK1, "jongchk", i).strip()) #수정구분
+        rate = float(query.GetFieldData(OUTBLOCK1, "rate", i).strip()) #수정비율
+
+
+        candle = {'date':date, 'time':tm, 'open':opn, 'high':high, 'low':low, 'close':close, 'qty':jdiff_vol, 
+                    'value': value, 'sign':sign, 'jongchk':jongchk, 'rate':rate }   
+        result2.append(candle)                              
+
+    res = []
+    res.append(result1)
+    res.append(result2)
+    res.append([{'total':nCount}])
+    return res
+
+# 0:30초 1: 1분 2: 2분 ..... n: n분        
+def download_min_data(ncnt, codes, from_date, to_date) :
+    # 0:30초 1: 1분 2: 2분 ..... n: n분        
+    qrycnt = 500 # 최대 500개
+
+    for code in codes :
+        for i in range(from_date, to_date+1) :
+            sdate = str(i)
+            fname = code+'_'+sdate+'_min_bong'
+            data = load_json_from_file(fname+'.txt', 0)
+            if data != {} :  # 해당 코드 해당 일자 파일이 없으면 생성한다.
+                print('already exist(skipped) : ', fname)
+                continue
+            edate = ''
+            end = 0
+            cts_date = ' '  # 처음에는 ' '  이후에는 결과 값에 있는 cts_date
+            cts_time = ' '
+            ret = []
+            while(end != 1) :
+                bong = chart_min(code, ncnt, qrycnt, sdate, edate, cts_date, cts_time) 
+                if bong[2][0]['total'] == 0 :
+                    print('no market info', code, sdate)
+                    end = 1
+                    continue
+                cts_date = bong[0][0]['cts_date']
+                ret += bong[1]
+                if cts_date == '' :
+                    end = 1
+                end = 1
+                
+            if len(ret) > 0 :
+                fname = code+'_'+sdate+'_min_bong'
+                save_to_file_json(fname+'.txt', ret)
+                save_to_file_csv(fname+'.csv', ret)
+                print('done :', sdate)
+            time.sleep(1)
+    print('')    
+
 if __name__ == "__main__":
     
     print('\nebest testing')
@@ -460,5 +634,15 @@ if __name__ == "__main__":
     else :
         print('fail to login')
 
-
+    ## 
+    ## min data download
+    ##
+    codes = ['069500'] # 여러 코드 넣으면 됨 ['069500', '114800']
     
+    from_date = 20200701  # 시작 일자 8자리 format 지켜야함
+    to_date = 20200708  # 끝 일자 8자리 format 지켜야함
+    print('start download min data', codes, from_date, to_date)
+    # 0:30초 1: 1분 2: 2분 ..... n: n분            
+    min_num = 1 # 1분 데이터
+    download_min_data(min_num, codes, from_date, to_date)
+
