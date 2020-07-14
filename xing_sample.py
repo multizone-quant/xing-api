@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 
-# date : 2020/07/08
+# date : 2020/07/14
 # xing api sample
 #  - login
 #  - 잔고조회 : T0424
 #  - 주문조회 : T0425
 #  - Q검색리스트 : T1826
 #  - Q검색 : T1825
+#  - 분 시세조회 : T8412
+#  - 일 시세조회 : T8413
 #
 # 보다 자세한 내용을 아래 tistory 참고
 # https://money-expert.tistory.com/14
@@ -217,6 +219,42 @@ class Form(QtWidgets.QDialog):
         for query in self.query_list :
             pr = query[0] + ' ' + query[1]
             self.show_message(pr)
+    
+    ## 
+    ## min data download
+    ##
+    def Min_Chart_8412(self) :
+        # add codes  복수개 가능(,로 연결) ['069500','114800']
+        codes = ['069500']
+        
+        from_date = 20200709  # 시작 일자 yyyymmdd
+        to_date = 20200710    # 끝   일자 yymmdd
+        # 종류 : 0:30초 1: 1분 2: 2분 ..... n: n분            
+        min_num = 1 # 1분 데이터
+                    
+        msg = 'start download min data [' + str(from_date) +' ' + str(to_date) +']'
+        self.show_message(msg)
+        download_min_data(codes, min_num, from_date, to_date)
+        msg = 'done'
+        self.show_message(msg)
+
+
+    ## 
+    ## day data download
+    ##
+    def Day_Chart_8413(self) :
+        # add codes  복수개 가능(,로 연결) ['069500','114800']
+        codes = ['069500']
+        to_date = 20200706   # 다운받을 최종일자
+        num_days = 1       # 최종일 이전 며칠 , (당일만 원하는 경우에는 1)   
+        msg = 'start download day data [' + str(to_date) + ']  ' + str(num_days) + 'days'
+        self.show_message(msg)
+        download_day_data(codes, to_date, num_days) 
+        msg = 'done'
+        self.show_message(msg)
+##
+##  end of FORM
+##
 
 class XASessionEventHandler:
     login_state = 0
@@ -490,7 +528,7 @@ def get_q_query_list(gubun) :
 # edate : 끝 date
 def chart_min(code, ncnt, qrycnt, sdate, edate, cts_date='', cts_time=' ') :
     '''
-    차트 일/주/월봉
+    차트  분
     '''
     time.sleep(0.5)
     tr_code = 't8412'
@@ -570,9 +608,90 @@ def chart_min(code, ncnt, qrycnt, sdate, edate, cts_date='', cts_time=' ') :
     res.append([{'total':nCount}])
     return res
 
-# 0:30초 1: 1분 2: 2분 ..... n: n분        
-def download_min_data(ncnt, codes, from_date, to_date) :
-    # 0:30초 1: 1분 2: 2분 ..... n: n분        
+# gubun : 주기구분(2:일3:주4:월)
+# sdate : 시작 date
+# edate : 끝 date
+# qrycnt : 조회일자
+def chart_day(code, gubun, qrycnt, sdate, edate, cts_date='') :
+    '''
+    차트 일/주/월봉
+    '''
+    time.sleep(0.5)
+    tr_code = 't8413'
+
+    MYNAME = tr_code
+    INBLOCK = "%sInBlock" % MYNAME
+    INBLOCK1 = "%sInBlock1" % MYNAME
+    OUTBLOCK = "%sOutBlock" % MYNAME
+    OUTBLOCK1 = "%sOutBlock1" % MYNAME
+    OUTBLOCK2 = "%sOutBlock2" % MYNAME
+    query = win32com.client.DispatchWithEvents("XA_DataSet.XAQuery", XAQueryEventHandler)    
+    query.ResFileName = "C:\\eBEST\\xingAPI\\Res\\"+tr_code+".res"
+
+    query.SetFieldData(INBLOCK, "shcode", 0, code) # 종목번호 
+    query.SetFieldData(INBLOCK, "gubun", 0, gubun) # 주기구분(2:일3:주4:월)
+    query.SetFieldData(INBLOCK, "qrycnt", 0, qrycnt) #봉 수)
+    query.SetFieldData(INBLOCK, "sdate", 0, sdate) #시작일자)
+    query.SetFieldData(INBLOCK, "edate", 0, sdate) #끝일자)
+    query.SetFieldData(INBLOCK, "cts_date", 0, cts_date) #연속일자)
+    query.SetFieldData(INBLOCK, "comp_yn", 0, 'N') #압축여부 : Y:압축, N:비압축
+    query.Request(0)
+
+    ret = wait_for_event(tr_code)
+    if ret == 0 :
+        return [{'error':{'message':'Not respond msg'}}]
+
+    result1 = []
+    nCount = query.GetBlockCount(OUTBLOCK)
+    for i in range(nCount):
+        shcode = query.GetFieldData(OUTBLOCK, "shcode", i).strip() #코드
+        jisiga = int(query.GetFieldData(OUTBLOCK, "jisiga", i).strip()) #전일시가
+        jihigh = int(query.GetFieldData(OUTBLOCK, "jihigh", i).strip()) #전일고가
+        jilow = int(query.GetFieldData(OUTBLOCK, "jilow", i).strip()) #전일저가
+        jiclose = int(query.GetFieldData(OUTBLOCK, "jiclose", i).strip()) #전일종가
+        jivolume = int(query.GetFieldData(OUTBLOCK, "jivolume", i).strip()) #전일거래량
+        disiga = int(query.GetFieldData(OUTBLOCK, "disiga", i).strip()) #당일시가
+        dihigh = int(query.GetFieldData(OUTBLOCK, "dihigh", i).strip()) #당일고가
+        dilow = int(query.GetFieldData(OUTBLOCK, "dilow", i).strip()) #당일저가
+        diclose = int(query.GetFieldData(OUTBLOCK, "diclose", i).strip()) #당일종가
+        cts_date = query.GetFieldData(OUTBLOCK, "cts_date", i).strip() #연속일자
+        rec_count = int(query.GetFieldData(OUTBLOCK, "rec_count", i).strip()) #rec 수
+
+        candle = {'code':shcode, 'jisiga':jisiga, 'jihigh':jihigh, 'jilow':jilow, 'jiclose':jiclose, 'jivolume':jivolume, 
+                    'disiga':disiga, 'dihigh':dihigh, 'dilow':dilow, 'diclose':diclose, 
+                    'cts_date': cts_date, 'rec_cnt':rec_count}
+
+        result1.append(candle)
+
+    result2 = []
+    nCount = query.GetBlockCount(OUTBLOCK1)
+    for i in range(nCount):
+        date = query.GetFieldData(OUTBLOCK1, "date", i).strip() #일자
+        open = int(query.GetFieldData(OUTBLOCK1, "open", i).strip()) #시가
+        high = int(query.GetFieldData(OUTBLOCK1, "high", i).strip()) #고가
+        low = int(query.GetFieldData(OUTBLOCK1, "low", i).strip()) #저가
+        close = int(query.GetFieldData(OUTBLOCK1, "close", i).strip()) #종가
+        jdiff_vol = int(query.GetFieldData(OUTBLOCK1, "jdiff_vol", i).strip()) #거래량
+        value = int(query.GetFieldData(OUTBLOCK1, "value", i).strip()) #거래대금
+
+        sign = query.GetFieldData(OUTBLOCK1, "sign", i).strip() #종가등락(1:상한, 2:상승, 3: 보합
+
+        jongchk = int(query.GetFieldData(OUTBLOCK1, "jongchk", i).strip()) #수정구분
+        rate = float(query.GetFieldData(OUTBLOCK1, "rate", i).strip()) #수정비율
+
+
+        candle = {'date':date, 'open':open, 'high':high, 'low':low, 'close':close, 'qty':jdiff_vol, 
+                    'value':value, 'sign':sign, 'jongchk':jongchk, 'rate':rate, 'jiclose':jiclose }   
+        result2.append(candle)                              
+
+    res = []
+    res.append(result1)
+    res.append(result2)
+    res.append([{'total':nCount}])
+    return res
+
+# min_type = 0:30초 1: 1분 2: 2분 ..... n: n분        
+def download_min_data(codes, min_type, from_date, to_date) :
     qrycnt = 500 # 최대 500개
 
     for code in codes :
@@ -589,7 +708,7 @@ def download_min_data(ncnt, codes, from_date, to_date) :
             cts_time = ' '
             ret = []
             while(end != 1) :
-                bong = chart_min(code, ncnt, qrycnt, sdate, edate, cts_date, cts_time) 
+                bong = chart_min(code, min_type, qrycnt, sdate, edate, cts_date, cts_time) 
                 if bong[2][0]['total'] == 0 :
                     print('no market info', code, sdate)
                     end = 1
@@ -606,13 +725,47 @@ def download_min_data(ncnt, codes, from_date, to_date) :
                 save_to_file_csv(fname+'.csv', ret)
                 print('done :', sdate)
             time.sleep(1)
-    print('')    
+    print('done')    
 
-if __name__ == "__main__":
-    
+
+def download_day_data(codes, dt, days) :
+    gubun = '2' # 일봉
+    sdate = str(dt)
+    edate = ''
+    end = 0
+    cnt = 0        
+    cts_date = ' '  # 처음에는 ' '  이후에는 결과 값에 있는 cts_date
+    ret = []
+    for code in codes :
+        fname = '.\\'+code+'_'+sdate+'_day_bong.txt'
+        data = load_json_from_file(fname, 0)
+        if data != {} :
+            print('already exist(skipped) : ', fname)
+            continue
+
+        print('day bong gathering : ', code)
+        bong = chart_day(code, gubun, days, sdate, edate, cts_date) 
+        if 'error' in bong[0] :
+            print('err ', code)
+            time.sleep(10)
+            continue
+        cts_date = bong[0][0]['cts_date']
+
+        ret = bong[1]
+        end = 1
+        if len(ret) > 0 :
+            fname = '.\\'+code+'_'+sdate+'_day_bong'
+            save_to_file_json(fname+'.txt', ret)
+            save_to_file_csv(fname+'.csv', ret)
+        cnt += 1
+        if (cnt % 10) == 0 :
+            print(fname, cnt)
+        time.sleep(5)
+    print('done')
+
+if __name__ == "__main__":    
     print('\nebest testing')
-    server_add = "hts.ebestsec.co.kr"
-    
+
     ret = login(server_add, id, passwd, cert_passwd, account_number, account_pwd)
     if ret != -1 :
         time.sleep(1)
@@ -631,18 +784,7 @@ if __name__ == "__main__":
             WIDGET = Form()
             WIDGET.show()
             app.exec_()
+            exit()
     else :
         print('fail to login')
-
-    ## 
-    ## min data download
-    ##
-    codes = ['069500'] # 여러 코드 넣으면 됨 ['069500', '114800']
-    
-    from_date = 20200701  # 시작 일자 8자리 format 지켜야함
-    to_date = 20200708  # 끝 일자 8자리 format 지켜야함
-    print('start download min data', codes, from_date, to_date)
-    # 0:30초 1: 1분 2: 2분 ..... n: n분            
-    min_num = 1 # 1분 데이터
-    download_min_data(min_num, codes, from_date, to_date)
 
