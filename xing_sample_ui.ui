@@ -75,6 +75,32 @@
     <string>주문체결상태 T0425</string>
    </property>
   </widget>
+  <widget class="QPushButton" name="pushButton_q_query_1829">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>270</y>
+     <width>191</width>
+     <height>34</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>과거 분 시세 조회 T8412</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="pushButton_q_query_1830">
+   <property name="geometry">
+    <rect>
+     <x>20</x>
+     <y>320</y>
+     <width>191</width>
+     <height>34</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>과거 일 시세 조회 T8413</string>
+   </property>
+  </widget>
  </widget>
  <resources/>
  <connections>
@@ -142,11 +168,45 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>pushButton_q_query_1829</sender>
+   <signal>clicked()</signal>
+   <receiver>Form</receiver>
+   <slot>Min_Chart_8412()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>155</x>
+     <y>287</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>223</x>
+     <y>289</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButton_q_query_1830</sender>
+   <signal>clicked()</signal>
+   <receiver>Form</receiver>
+   <slot>Day_Chart_8413()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>197</x>
+     <y>330</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>226</x>
+     <y>346</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>Q_Query_1825()</slot>
   <slot>Q_List_1826()</slot>
   <slot>Balance_0424()</slot>
   <slot>OrderResults_0425()</slot>
+  <slot>Min_Chart_8412()</slot>
+  <slot>Day_Chart_8413()</slot>
  </slots>
 </ui>
