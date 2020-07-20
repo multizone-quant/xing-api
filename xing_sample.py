@@ -826,7 +826,7 @@ if __name__ == "__main__":
         rets = stock_future_master_code()
         cnt = 0
         for ret in rets[0] :
-            if cnt > 10 :
+            if cnt >= 10 :
                 break
             cnt+=1
             print (ret)
