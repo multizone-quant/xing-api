@@ -763,6 +763,39 @@ def download_day_data(codes, dt, days) :
         time.sleep(5)
     print('done')
 
+####
+# 주식선물 API
+####
+# 주식선물 마스터 조회 API :  't8401' 
+def stock_future_master_code() : #
+    tr_code = 't8401'
+    INBLOCK = "%sInBlock" % tr_code
+    OUTBLOCK = "%sOutBlock" % tr_code
+    
+    query = win32com.client.DispatchWithEvents("XA_DataSet.XAQuery", XAQueryEventHandler)    
+    query.ResFileName = "C:\\eBEST\\xingAPI\\Res\\"+tr_code+".res"
+
+    query.SetFieldData(INBLOCK, "dummy", 0, '0') #
+    query.Request(0)
+
+    ret = wait_for_event(tr_code)
+    if ret == 0 :
+        return
+
+    result = []
+
+    nCount = query.GetBlockCount(OUTBLOCK)
+    for i in range(nCount):
+        hname = query.GetFieldData(OUTBLOCK, "hname", i).strip() # 종목명
+        shcode = query.GetFieldData(OUTBLOCK, "shcode", i).strip() # 단축코드
+        expcode = query.GetFieldData(OUTBLOCK, "expcode", i).strip() # 확장코드
+        basecode = query.GetFieldData(OUTBLOCK, "basecode", i).strip() # 기초자산코드
+
+        lst = [hname, shcode, expcode, basecode]
+        result.append(lst)
+
+    return [result]
+
 if __name__ == "__main__":    
     print('\nebest testing')
 
@@ -788,3 +821,13 @@ if __name__ == "__main__":
     else :
         print('fail to login')
 
+    if 1:
+        # T8401  주식선물 master code 10개만 출력
+        rets = stock_future_master_code()
+        cnt = 0
+        for ret in rets[0] :
+            if cnt > 10 :
+                break
+            cnt+=1
+            print (ret)
+        print('')           
