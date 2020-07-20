@@ -14,6 +14,7 @@
 # https://money-expert.tistory.com/14
 # https://money-expert.tistory.com/17
 # https://money-expert.tistory.com/18
+# https://money-expert.tistory.com/18 : T8401
 
 import win32com.client
 import pythoncom
@@ -822,6 +823,7 @@ if __name__ == "__main__":
         print('fail to login')
 
     if 1:
+        # USING_GUI = 0 으로 변경한 후 실행하여야 함
         # T8401  주식선물 master code 10개만 출력
         rets = stock_future_master_code()
         cnt = 0
