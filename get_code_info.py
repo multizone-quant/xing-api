@@ -1,6 +1,9 @@
 # 선물/옵션 코드에 대하여 풀어서 돌려줌
 # 참고 글
 # https://agibbyeongari.tistory.com/897
+
+# 코드에 대한 글
+# https://money-expert.tistory.com/66
 # 2021 : 105R8000 : 1:선물, 05:미니선물 R:2021 8:월 A,B,C(10,11,12)
 
 import json
