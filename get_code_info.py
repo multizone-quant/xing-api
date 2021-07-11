@@ -1,9 +1,6 @@
 # 선물/옵션 코드에 대하여 풀어서 돌려줌
 # 참고 글
 # https://agibbyeongari.tistory.com/897
-
-# 코드에 대한 글
-# https://money-expert.tistory.com/66
 # 2021 : 105R8000 : 1:선물, 05:미니선물 R:2021 8:월 A,B,C(10,11,12)
 
 import json
@@ -26,7 +23,11 @@ def get_code_info(code) :
     val = code[0]
     info['type'] = code_1[val]
 
+    weekly = 0
     val = code[1:3]
+    if val == '09' : # weekly option은 구조가 틀리다.
+        weekly = 1
+
     info['gubun'] = code_2_3[val]
     if info['gubun'] != '' :
         info['gubun'] += ' '
@@ -43,6 +44,15 @@ def get_code_info(code) :
     val = code[5:8]
     info['exe_price'] = int(val)
 
+    # weekly option 구조는 일반 option/future와는 틀리다.
+    if weekly :  # 20973442 
+        val = code[3] # 3번째 칸이 월 (1-9,A,B,C)
+        info['year'] = 0
+        info['month'] = code_5[val]
+        info['week'] = int(code[4]) # 4번째 칸은 몇 번째 주인지.
+    else :
+        info['week'] = 0
+
     return info
 
 if __name__ == '__main__':
@@ -58,7 +68,7 @@ if __name__ == '__main__':
     print(code, info)
 
     # weekly call option
-    code = '209R8440'
+    code = '20973442'
     info = get_code_info(code)
     print(code, info)
 
@@ -73,7 +83,7 @@ if __name__ == '__main__':
     print(code, info)
 
     # weekly call option
-    code = '309R8440'
+    code = '30973442'
     info = get_code_info(code)
     print(code, info)
 
